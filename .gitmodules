@@ -1,0 +1,3 @@
+[submodule "mreq"]
+	path = mreq
+	url = git@github.com:tech-alp/mreq.git

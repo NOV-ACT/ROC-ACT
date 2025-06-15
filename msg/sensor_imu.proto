@@ -1,0 +1,13 @@
+syntax = "proto2";
+
+package novact.fc.msg;
+
+message SensorImu {
+  required int64 timestamp_us = 1; // Timestamp in microseconds
+  required float accel_x = 2;
+  required float accel_y = 3;
+  required float accel_z = 4;
+  required float gyro_x = 5;
+  required float gyro_y = 6;
+  required float gyro_z = 7;
+}

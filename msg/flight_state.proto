@@ -1,0 +1,20 @@
+syntax = "proto2";
+
+package novact.fc.msg;
+
+enum FlightPhase {
+  IDLE = 0;
+  BOOST = 1;
+  COAST = 2;
+  DEPLOY = 3;
+  RECOVERY = 4;
+}
+
+message FlightState {
+  required int64 timestamp_us = 1; // Timestamp in microseconds
+  required FlightPhase current_phase = 2;
+  required bool armed = 3;
+  optional float altitude_m = 4; // Current estimated altitude
+  optional float vertical_velocity_mps = 5; // Vertical velocity in meters per second
+  optional float acceleration_mps2 = 6; // Total acceleration magnitude
+}
