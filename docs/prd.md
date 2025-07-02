@@ -24,6 +24,10 @@ Kod tabanı **C++17** standardında yazılacak olup, **ESP32**, **STM32**, **NRF
 
 ```plaintext
 project-root/
+├── .gitignore
+├── .gitmodules
+├── CMakeLists.txt
+├── sdkconfig.old
 ├── msg/                   # .proto tanımları (sensor_imu.proto, flight_state.proto ...)
 ├── include/               # Ortak başlık dosyaları (platformdan bağımsız)
 ├── src/
@@ -32,12 +36,13 @@ project-root/
 │   ├── drivers/           # sensör ve donanım sürücüleri (imu_bmi088.cpp, pyro_gpio.cpp)
 │   ├── utils/             # zamanlayıcılar, log formatlayıcılar, CRC vb.
 │   └── main.cpp           # FreeRTOS main + scheduler başlatıcı
+├── main/                  # Main application components
+│   └── CMakeLists.txt
 ├── freertos/              # FreeRTOS config, port layer, heap, linker vb.
 │   ├── FreeRTOSConfig.h
 │   └── startup.c
-├── CMakeLists.txt
 ├── README.md
-├── 3rdparty/mreq          # MREQ kütüphanesi (topic, registry, subscriber ...)
+├── mreq                   # MREQ kütüphanesi (topic, registry, subscriber ...)
 ```
 
 ---

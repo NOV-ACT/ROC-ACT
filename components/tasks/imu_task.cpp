@@ -1,0 +1,38 @@
+#include <FreeRTOS.h>
+#include <task.h>
+#include <stdio.h>
+#include "drivers/ImuDriver.hpp"
+#include "core/MessagingClient.hpp"
+#include "sensor_imu.pb.h" // For SensorImu message
+
+extern "C" void imu_task(void* pvParameters) {
+    (void)pvParameters; // Unused parameter
+
+    novact::drivers::ImuDriver imuDriver;
+    novact::core::MessagingClient messagingClient;
+
+    if (!imuDriver.initialize()) {
+        printf("IMU Task: Failed to initialize IMU Driver!\n");
+        vTaskDelete(NULL); // Delete task if initialization fails
+    }
+
+    printf("IMU Task: Initializing...\n");
+
+    for (;;) {
+        novact::drivers::ImuData imuRawData = imuDriver.readData();
+
+        novact::core::SensorImu imuMessage;
+        imuMessage.timestamp = xTaskGetTickCount(); // Use FreeRTOS tick count as timestamp
+        imuMessage.accel_x = imuRawData.accel_x;
+        imuMessage.accel_y = imuRawData.accel_y;
+        imuMessage.accel_z = imuRawData.accel_z;
+        imuMessage.gyro_x = imuRawData.gyro_x;
+        imuMessage.gyro_y = imuRawData.gyro_y;
+        imuMessage.gyro_z = imuRawData.gyro_z;
+
+        messagingClient.publishImu(imuMessage);
+
+        printf("IMU Task: Reading and publishing IMU data.\n");
+        vTaskDelay(pdMS_TO_TICKS(100)); // Run every 100ms
+    }
+}

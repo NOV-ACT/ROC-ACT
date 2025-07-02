@@ -1,25 +1,8 @@
 # Main application component
-set(COMPONENT_SRCS
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/main.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/tasks/imu_task.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/tasks/baro_task.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/tasks/state_task.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/tasks/pyro_task.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/tasks/logger_task.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/tasks/telemetry_task.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../freertos/startup.c
+
+idf_component_register(
+    SRCS "main.cpp" ${PROJECT_GENERATED_PB_SRCS} ${PROJECT_GENERATED_TOPIC_REGISTRY_SRCS}
+    REQUIRES drivers core hal tasks freertos_config msg_proto
 )
 
-set(COMPONENT_PRIV_INCLUDE_DIRS
-    ${CMAKE_CURRENT_SOURCE_DIR}/../include
-    ${CMAKE_CURRENT_SOURCE_DIR}/../msg
-    ${CMAKE_CURRENT_SOURCE_DIR}/../mreq/external/nanopb
-    ${CMAKE_BINARY_DIR}/gen
-    ${CMAKE_BINARY_DIR}/autogen
-)
-
-idf_component_register(SRCS ${COMPONENT_SRCS}
-                       GENERATED_SRCS ${ALL_PROJECT_GENERATED_SRCS}
-                       INCLUDE_DIRS ${COMPONENT_PRIV_INCLUDE_DIRS}
-                       REQUIRES mreq freertos)
-message(STATUS "main/CMakeLists.txt - ALL_PROJECT_GENERATED_SRCS: ${ALL_PROJECT_GENERATED_SRCS}")
+target_link_libraries(${COMPONENT_LIB} PRIVATE mreq)
