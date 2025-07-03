@@ -6,16 +6,16 @@
 namespace novact {
 namespace core {
 
-enum class FlightState : uint8_t {
-    IDLE,
-    BOOST,
-    COAST,
-    DEPLOY,
-    RECOVERY
-};
 
 class StateManager {
 public:
+    enum class FlightState : uint8_t {
+        IDLE,
+        BOOST,
+        COAST,
+        DEPLOY,
+        RECOVERY
+    };
     StateManager();
     void updateState();
     FlightState getCurrentState() const;

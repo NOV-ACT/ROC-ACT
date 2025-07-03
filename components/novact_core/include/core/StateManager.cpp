@@ -1,12 +1,12 @@
 #include "StateManager.hpp"
-#include <iostream> // For demonstration, replace with actual logging/event system
+#include "esp_log.h" // Use ESP-IDF logging
 
 namespace novact {
 namespace core {
 
 StateManager::StateManager() : currentState(FlightState::IDLE) {
     // Constructor: Initialize state
-    std::cout << "StateManager initialized. Current state: IDLE" << std::endl;
+    ESP_LOGI("StateManager", "Initialized. Current state: IDLE");
 }
 
 void StateManager::updateState() {
@@ -19,34 +19,34 @@ void StateManager::updateState() {
         case FlightState::IDLE:
             // Assume some condition to transition to BOOST
             // e.g., high acceleration detected
-            // if (acceleration > threshold_boost) {
-            //     currentState = FlightState::BOOST;
-            //     std::cout << "Transitioned to BOOST" << std::endl;
-            // }
+            // if (acceleration > threshold_boost) { 
+            //     currentState = FlightState::BOOST; 
+            //     ESP_LOGI("StateManager", "Transitioned to BOOST");
+            // } 
             break;
         case FlightState::BOOST:
             // Assume some condition to transition to COAST
             // e.g., motor cut-off, acceleration drops
-            // if (motor_cut_off || acceleration < threshold_coast) {
-            //     currentState = FlightState::COAST;
-            //     std::cout << "Transitioned to COAST" << std::endl;
-            // }
+            // if (motor_cut_off || acceleration < threshold_coast) { 
+            //     currentState = FlightState::COAST; 
+            //     ESP_LOGI("StateManager", "Transitioned to COAST");
+            // } 
             break;
         case FlightState::COAST:
             // Assume some condition to transition to DEPLOY
             // e.g., apogee detection
-            // if (apogee_detected) {
-            //     currentState = FlightState::DEPLOY;
-            //     std::cout << "Transitioned to DEPLOY" << std::endl;
-            // }
+            // if (apogee_detected) { 
+            //     currentState = FlightState::DEPLOY; 
+            //     ESP_LOGI("StateManager", "Transitioned to DEPLOY");
+            // } 
             break;
         case FlightState::DEPLOY:
             // Assume some condition to transition to RECOVERY
             // e.g., parachute deployed, safe landing
-            // if (parachute_deployed && safe_landing) {
-            //     currentState = FlightState::RECOVERY;
-            //     std::cout << "Transitioned to RECOVERY" << std::endl;
-            // }
+            // if (parachute_deployed && safe_landing) { 
+            //     currentState = FlightState::RECOVERY; 
+            //     ESP_LOGI("StateManager", "Transitioned to RECOVERY");
+            // } 
             break;
         case FlightState::RECOVERY:
             // Final state, possibly wait for user interaction or power off
@@ -54,7 +54,7 @@ void StateManager::updateState() {
     }
 }
 
-FlightState StateManager::getCurrentState() const {
+StateManager::FlightState StateManager::getCurrentState() const {
     return currentState;
 }
 

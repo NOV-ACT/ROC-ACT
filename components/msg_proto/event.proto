@@ -1,6 +1,4 @@
-syntax = "proto2";
-
-package novact.fc.msg;
+syntax = "proto3";
 
 enum EventType {
   INFO = 0;
@@ -10,8 +8,8 @@ enum EventType {
 }
 
 message Event {
-  required int64 timestamp_us = 1; // Timestamp in microseconds
-  required EventType type = 2;
-  required string message = 3; // Human-readable event description
+  int64 timestamp_us = 1; // Timestamp in microseconds
+  EventType type = 2;
+  string message = 3; // Human-readable event description
   optional uint32 error_code = 4; // Optional error code for ERROR/CRITICAL events
 }

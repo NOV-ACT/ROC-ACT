@@ -1,5 +1,5 @@
-#include <FreeRTOS.h>
-#include <task.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include <stdio.h>
 
 // Forward declarations for tasks
@@ -17,7 +17,7 @@ void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName) {
     while(1); // Halt the system
 }
 
-int main() {
+extern "C" void app_main(void) {
     // Create tasks
     xTaskCreate(imu_task, "IMU_Task", configMINIMAL_STACK_SIZE * 2, NULL, tskIDLE_PRIORITY + 2, NULL);
     xTaskCreate(baro_task, "BARO_Task", configMINIMAL_STACK_SIZE * 2, NULL, tskIDLE_PRIORITY + 2, NULL);
@@ -25,11 +25,4 @@ int main() {
     xTaskCreate(pyro_task, "PYRO_Task", configMINIMAL_STACK_SIZE * 2, NULL, tskIDLE_PRIORITY + 1, NULL);
     xTaskCreate(logger_task, "LOGGER_Task", configMINIMAL_STACK_SIZE * 4, NULL, tskIDLE_PRIORITY + 1, NULL);
     xTaskCreate(telemetry_task, "TELEMETRY_Task", configMINIMAL_STACK_SIZE * 3, NULL, tskIDLE_PRIORITY + 1, NULL);
-
-    // Start the FreeRTOS scheduler
-    vTaskStartScheduler();
-
-    // Should never reach here
-    for (;;);
-    return 0;
 }

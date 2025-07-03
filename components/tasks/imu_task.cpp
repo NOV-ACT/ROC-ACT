@@ -1,5 +1,5 @@
-#include <FreeRTOS.h>
-#include <task.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include <stdio.h>
 #include "drivers/ImuDriver.hpp"
 #include "core/MessagingClient.hpp"
@@ -21,8 +21,8 @@ extern "C" void imu_task(void* pvParameters) {
     for (;;) {
         novact::drivers::ImuData imuRawData = imuDriver.readData();
 
-        novact::core::SensorImu imuMessage;
-        imuMessage.timestamp = xTaskGetTickCount(); // Use FreeRTOS tick count as timestamp
+        SensorImu imuMessage;
+        imuMessage.timestamp_us = xTaskGetTickCount(); // Use FreeRTOS tick count as timestamp
         imuMessage.accel_x = imuRawData.accel_x;
         imuMessage.accel_y = imuRawData.accel_y;
         imuMessage.accel_z = imuRawData.accel_z;

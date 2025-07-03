@@ -1,9 +1,7 @@
-syntax = "proto2";
-
-package novact.fc.msg;
+syntax = "proto3";
 
 message PyroCommand {
-  required int64 timestamp_us = 1; // Timestamp in microseconds
-  required uint32 channel_id = 2; // Which pyro channel to activate (e.g., 0 for main, 1 for drogue)
-  required bool activate = 3; // True to activate, false to deactivate (though typically only activate is used)
+  int64 timestamp_us = 1; // Timestamp in microseconds
+  uint32 channel_id = 2; // Which pyro channel to activate (e.g., 0 for main, 1 for drogue)
+  bool activate = 3; // True to activate, false to deactivate (though typically only activate is used)
 }

@@ -1,5 +1,5 @@
-#include <FreeRTOS.h>
-#include <task.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include <stdio.h>
 #include "drivers/PyroDriver.hpp"
 #include "core/MessagingClient.hpp"
@@ -19,15 +19,15 @@ extern "C" void pyro_task(void* pvParameters) {
     printf("Pyro Task: Initializing...\n");
 
     for (;;) {
-        std::optional<novact::core::PyroCommand> pyroCommand = messagingClient.readPyroCommand();
+        std::optional<PyroCommand> pyroCommand = messagingClient.readPyroCommand();
         if (pyroCommand) {
-            if (pyroCommand->activate) {
-                pyroDriver.activateChannel(pyroCommand->channel);
+            if (pyroCommand.value().activate) {
+                pyroDriver.activateChannel(pyroCommand.value().channel_id);
             } else {
-                pyroDriver.deactivateChannel(pyroCommand->channel);
+                pyroDriver.deactivateChannel(pyroCommand.value().channel_id);
             }
             printf("Pyro Task: Processed pyro command for channel %d, activate: %d.\n",
-                   static_cast<int>(pyroCommand->channel), pyroCommand->activate);
+                   static_cast<int>(pyroCommand.value().channel_id), pyroCommand.value().activate);
         } else {
             printf("Pyro Task: No new pyro commands.\n");
         }

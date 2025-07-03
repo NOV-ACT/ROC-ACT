@@ -1,5 +1,5 @@
-#include <FreeRTOS.h>
-#include <task.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include <stdio.h>
 
 extern "C" void telemetry_task(void* pvParameters) {

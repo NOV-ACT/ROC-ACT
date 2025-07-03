@@ -1,5 +1,5 @@
-#include <FreeRTOS.h>
-#include <task.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include <stdio.h>
 #include "drivers/BarometerDriver.hpp"
 #include "core/MessagingClient.hpp"
@@ -21,11 +21,11 @@ extern "C" void baro_task(void* pvParameters) {
     for (;;) {
         novact::drivers::BarometerData baroRawData = barometerDriver.readData();
 
-        novact::core::SensorBaro baroMessage;
-        baroMessage.timestamp = xTaskGetTickCount(); // Use FreeRTOS tick count as timestamp
-        baroMessage.pressure = baroRawData.pressure;
-        baroMessage.temperature = baroRawData.temperature;
-        baroMessage.altitude = baroRawData.altitude;
+        SensorBaro baroMessage;
+        baroMessage.timestamp_us = xTaskGetTickCount(); // Use FreeRTOS tick count as timestamp
+        baroMessage.pressure_pa = baroRawData.pressure;
+        baroMessage.temperature_c = baroRawData.temperature;
+        baroMessage.altitude_m = baroRawData.altitude;
 
         messagingClient.publishBaro(baroMessage);
 

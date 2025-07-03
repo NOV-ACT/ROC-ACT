@@ -1,10 +1,8 @@
-syntax = "proto2";
-
-package novact.fc.msg;
+syntax = "proto3";
 
 message SensorBaro {
-  required int64 timestamp_us = 1; // Timestamp in microseconds
-  required float pressure_pa = 2; // Pressure in Pascals
-  required float temperature_c = 3; // Temperature in Celsius
-  required float altitude_m = 4; // Estimated altitude in meters
+  int64 timestamp_us = 1; // Timestamp in microseconds
+  float pressure_pa = 2; // Pressure in Pascals
+  float temperature_c = 3; // Temperature in Celsius
+  float altitude_m = 4; // Estimated altitude in meters
 }

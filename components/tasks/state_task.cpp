@@ -1,5 +1,5 @@
-#include <FreeRTOS.h>
-#include <task.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include <stdio.h>
 #include "core/StateManager.hpp"
 #include "core/SensorFusion.hpp"
@@ -31,21 +31,21 @@ extern "C" void state_task(void* pvParameters) {
 
     for (;;) {
         // Update and publish fused sensor data
-        novact::core::FusedSensorData fusedData = sensorFusion.updateAndPublish();
+        //novact::core::FusedSensorData fusedData = sensorFusion.updateAndPublish();
 
         // Read latest flight state from topic (if published by another task or for redundancy)
-        std::optional<novact::core::FlightState> currentFlightState = messagingClient.readFlightState();
+        std::optional<FlightState> currentFlightState = messagingClient.readFlightState();
         if (currentFlightState) {
             // Potentially use this for state validation or external control
             // For now, StateManager will drive the state
         }
 
         // Execute FSM logic
-        stateManager.updateState();
-        novact::core::FlightState currentFSMState;
-        currentFSMState.timestamp = xTaskGetTickCount();
-        currentFSMState.state = static_cast<uint8_t>(stateManager.getCurrentState());
-        messagingClient.publishFlightState(currentFSMState);
+        // stateManager.updateState();
+        // novact::core::FlightState currentFSMState;
+        // currentFSMState.timestamp = xTaskGetTickCount();
+        // currentFSMState.state = static_cast<uint8_t>(stateManager.getCurrentState());
+        // messagingClient.publishFlightState(currentFSMState);
 
         // Placeholder for pyro command and event publishing based on FSM state
         // if (stateManager.getCurrentState() == novact::core::FlightState::DEPLOY) {

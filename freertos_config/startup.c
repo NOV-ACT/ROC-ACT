@@ -8,8 +8,7 @@
  * Example (simplified):
  */
 
-#include <FreeRTOS.h>
-#include <task.h>
+#include "freertos/FreeRTOS.h"
 
 // Define the main function that FreeRTOS expects
 // This is usually called from the microcontroller's startup assembly code

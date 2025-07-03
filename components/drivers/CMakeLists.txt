@@ -1,2 +1,9 @@
-idf_component_register(SRCS "ImuDriver.cpp" "BarometerDriver.cpp" "PyroDriver.cpp" "SDCardDriver.cpp" "TelemetryDriver.cpp" "mpu6000/mpu6000.cpp"
-                       INCLUDE_DIRS "." "mpu6000")
+idf_component_register(SRCS 
+                        "include/drivers/ImuDriver.cpp"
+                        "include/drivers/BarometerDriver.cpp" 
+                        "include/drivers/PyroDriver.cpp" 
+                        "include/drivers/SDCardDriver.cpp" 
+                        "include/drivers/TelemetryDriver.cpp" 
+                        "include/drivers/mpu6000/mpu6000.cpp"
+                       INCLUDE_DIRS "include" "include/drivers/mpu6000"
+                       PRIV_REQUIRES novact_hal)

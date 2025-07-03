@@ -1,6 +1,4 @@
-syntax = "proto2";
-
-package novact.fc.msg;
+syntax = "proto3";
 
 enum FlightPhase {
   IDLE = 0;
@@ -11,9 +9,9 @@ enum FlightPhase {
 }
 
 message FlightState {
-  required int64 timestamp_us = 1; // Timestamp in microseconds
-  required FlightPhase current_phase = 2;
-  required bool armed = 3;
+  int64 timestamp_us = 1; // Timestamp in microseconds
+  FlightPhase current_phase = 2;
+  bool armed = 3;
   optional float altitude_m = 4; // Current estimated altitude
   optional float vertical_velocity_mps = 5; // Vertical velocity in meters per second
   optional float acceleration_mps2 = 6; // Total acceleration magnitude
