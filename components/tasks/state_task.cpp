@@ -29,15 +29,24 @@ extern "C" void state_task(void* pvParameters) {
         vTaskDelete(NULL);
     }
 
+    // Subscribe to topics
+    std::optional<size_t> flightStateSubToken = messagingClient.subscribeFlightState();
+    if (!flightStateSubToken) {
+        printf("State Task: Failed to subscribe to flight_state topic!\n");
+        vTaskDelete(NULL);
+    }
+
     for (;;) {
         // Update and publish fused sensor data
         //novact::core::FusedSensorData fusedData = sensorFusion.updateAndPublish();
 
         // Read latest flight state from topic (if published by another task or for redundancy)
-        std::optional<FlightState> currentFlightState = messagingClient.readFlightState();
-        if (currentFlightState) {
-            // Potentially use this for state validation or external control
-            // For now, StateManager will drive the state
+        FlightState currentFlightState;
+        if (messagingClient.checkFlightState(flightStateSubToken.value())) {
+            if (messagingClient.readFlightState(flightStateSubToken.value(), currentFlightState)) {
+                // Potentially use this for state validation or external control
+                // For now, StateManager will drive the state
+            }
         }
 
         // Execute FSM logic

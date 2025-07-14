@@ -23,22 +23,11 @@ MessagingClient::MessagingClient()
       pyroCommandTopic(TopicRegistry::instance().get_topic<PyroCommand>("pyro_command")),
       eventTopic(TopicRegistry::instance().get_topic<Event>("event")) {
 
-    std::cout << "MessagingClient initialized. Subscribing to topics..." << std::endl;
-
-    // Subscribe to topics and store tokens
-    imuSubToken = imuTopic.subscribe();
-    baroSubToken = baroTopic.subscribe();
-    fusedSensorDataSubToken = fusedSensorDataTopic.subscribe(); // New subscription
-    flightStateSubToken = flightStateTopic.subscribe();
-    pyroCommandSubToken = pyroCommandTopic.subscribe();
-    eventSubToken = eventTopic.subscribe();
-
-    if (!imuSubToken || !baroSubToken || !fusedSensorDataSubToken || !flightStateSubToken || !pyroCommandSubToken || !eventSubToken) {
-        std::cerr << "ERROR: Failed to subscribe to all MREQ topics!" << std::endl;
-        // In a real system, this would trigger a more robust error handling mechanism
-    }
+    std::cout << "MessagingClient initialized." << std::endl;
+    // No internal subscriptions needed anymore, external callers will manage their tokens.
 }
 
+// Publish methods
 bool MessagingClient::publishImu(const SensorImu& msg) {
     imuTopic.publish(msg);
     return true;
@@ -49,7 +38,7 @@ bool MessagingClient::publishBaro(const SensorBaro& msg) {
     return true;
 }
 
-bool MessagingClient::publishFusedSensorData(const FusedSensorData& msg) { // New publish method
+bool MessagingClient::publishFusedSensorData(const FusedSensorData& msg) {
     fusedSensorDataTopic.publish(msg);
     return true;
 }
@@ -69,46 +58,134 @@ bool MessagingClient::publishEvent(const Event& msg) {
     return true;
 }
 
-std::optional<SensorImu> MessagingClient::readImu() {
-    if (imuSubToken) {
-        return imuTopic.read(imuSubToken.value());
-    }
-    return std::nullopt;
+// Subscribe methods
+std::optional<size_t> MessagingClient::subscribeImu() {
+    return imuTopic.subscribe();
 }
 
-std::optional<SensorBaro> MessagingClient::readBaro() {
-    if (baroSubToken) {
-        return baroTopic.read(baroSubToken.value());
-    }
-    return std::nullopt;
+std::optional<size_t> MessagingClient::subscribeBaro() {
+    return baroTopic.subscribe();
 }
 
-std::optional<FusedSensorData> MessagingClient::readFusedSensorData() { // New read method
-    if (fusedSensorDataSubToken) {
-        return fusedSensorDataTopic.read(fusedSensorDataSubToken.value());
-    }
-    return std::nullopt;
+std::optional<size_t> MessagingClient::subscribeFusedSensorData() {
+    return fusedSensorDataTopic.subscribe();
 }
 
-std::optional<FlightState> MessagingClient::readFlightState() {
-    if (flightStateSubToken) {
-        return flightStateTopic.read(flightStateSubToken.value());
-    }
-    return std::nullopt;
+std::optional<size_t> MessagingClient::subscribeFlightState() {
+    return flightStateTopic.subscribe();
 }
 
-std::optional<PyroCommand> MessagingClient::readPyroCommand() {
-    if (pyroCommandSubToken) {
-        return pyroCommandTopic.read(pyroCommandSubToken.value());
-    }
-    return std::nullopt;
+std::optional<size_t> MessagingClient::subscribePyroCommand() {
+    return pyroCommandTopic.subscribe();
 }
 
-std::optional<Event> MessagingClient::readEvent() {
-    if (eventSubToken) {
-        return eventTopic.read(eventSubToken.value());
+std::optional<size_t> MessagingClient::subscribeEvent() {
+    return eventTopic.subscribe();
+}
+
+// Check methods
+bool MessagingClient::checkImu(size_t token) {
+    return imuTopic.check(token);
+}
+
+bool MessagingClient::checkBaro(size_t token) {
+    return baroTopic.check(token);
+}
+
+bool MessagingClient::checkFusedSensorData(size_t token) {
+    return fusedSensorDataTopic.check(token);
+}
+
+bool MessagingClient::checkFlightState(size_t token) {
+    return flightStateTopic.check(token);
+}
+
+bool MessagingClient::checkPyroCommand(size_t token) {
+    return pyroCommandTopic.check(token);
+}
+
+bool MessagingClient::checkEvent(size_t token) {
+    return eventTopic.check(token);
+}
+
+// Read methods
+bool MessagingClient::readImu(size_t token, SensorImu& out_msg) {
+    std::optional<SensorImu> data = imuTopic.read(token);
+    if (data) {
+        out_msg = data.value();
+        return true;
     }
-    return std::nullopt;
+    return false;
+}
+
+bool MessagingClient::readBaro(size_t token, SensorBaro& out_msg) {
+    std::optional<SensorBaro> data = baroTopic.read(token);
+    if (data) {
+        out_msg = data.value();
+        return true;
+    }
+    return false;
+}
+
+bool MessagingClient::readFusedSensorData(size_t token, FusedSensorData& out_msg) {
+    std::optional<FusedSensorData> data = fusedSensorDataTopic.read(token);
+    if (data) {
+        out_msg = data.value();
+        return true;
+    }
+    return false;
+}
+
+bool MessagingClient::readFlightState(size_t token, FlightState& out_msg) {
+    std::optional<FlightState> data = flightStateTopic.read(token);
+    if (data) {
+        out_msg = data.value();
+        return true;
+    }
+    return false;
+}
+
+bool MessagingClient::readPyroCommand(size_t token, PyroCommand& out_msg) {
+    std::optional<PyroCommand> data = pyroCommandTopic.read(token);
+    if (data) {
+        out_msg = data.value();
+        return true;
+    }
+    return false;
+}
+
+bool MessagingClient::readEvent(size_t token, Event& out_msg) {
+    std::optional<Event> data = eventTopic.read(token);
+    if (data) {
+        out_msg = data.value();
+        return true;
+    }
+    return false;
+}
+
+// Unsubscribe methods
+void MessagingClient::unsubscribeImu(size_t token) {
+    imuTopic.unsubscribe(token);
+}
+
+void MessagingClient::unsubscribeBaro(size_t token) {
+    baroTopic.unsubscribe(token);
+}
+
+void MessagingClient::unsubscribeFusedSensorData(size_t token) {
+    fusedSensorDataTopic.unsubscribe(token);
+}
+
+void MessagingClient::unsubscribeFlightState(size_t token) {
+    flightStateTopic.unsubscribe(token);
+}
+
+void MessagingClient::unsubscribePyroCommand(size_t token) {
+    pyroCommandTopic.unsubscribe(token);
+}
+
+void MessagingClient::unsubscribeEvent(size_t token) {
+    eventTopic.unsubscribe(token);
 }
 
 } // namespace core

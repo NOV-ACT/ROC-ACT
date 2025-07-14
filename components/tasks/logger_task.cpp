@@ -26,38 +26,60 @@ extern "C" void logger_task(void* pvParameters) {
 
     printf("Logger Task: Initializing...\n");
 
+    // Subscribe to all topics that LoggerTask needs to read
+    std::optional<size_t> imuSubToken = messagingClient.subscribeImu();
+    std::optional<size_t> baroSubToken = messagingClient.subscribeBaro();
+    std::optional<size_t> fusedSensorDataSubToken = messagingClient.subscribeFusedSensorData();
+    std::optional<size_t> flightStateSubToken = messagingClient.subscribeFlightState();
+    std::optional<size_t> eventSubToken = messagingClient.subscribeEvent();
+
+    if (!imuSubToken || !baroSubToken || !fusedSensorDataSubToken || !flightStateSubToken || !eventSubToken) {
+        printf("Logger Task: Failed to subscribe to all required topics!\n");
+        vTaskDelete(NULL);
+    }
+
     for (;;) {
         std::stringstream logStream;
 
         // Read and log IMU data
-        std::optional<SensorImu> imuData = messagingClient.readImu();
-        if (imuData) {
-            logStream << "IMU: Accel(" << imuData->accel_x << "," << imuData->accel_y << "," << imuData->accel_z << ") ";
+        SensorImu imuData;
+        if (messagingClient.checkImu(imuSubToken.value())) {
+            if (messagingClient.readImu(imuSubToken.value(), imuData)) {
+                logStream << "IMU: Accel(" << imuData.accel_x << "," << imuData.accel_y << "," << imuData.accel_z << ") ";
+            }
         }
 
         // Read and log Baro data
-        std::optional<SensorBaro> baroData = messagingClient.readBaro();
-        if (baroData) {
-            logStream << "Baro: Pres(" << baroData->pressure_pa << ") Temp(" << baroData->temperature_c << ") Alt(" << baroData->altitude_m << ") ";
+        SensorBaro baroData;
+        if (messagingClient.checkBaro(baroSubToken.value())) {
+            if (messagingClient.readBaro(baroSubToken.value(), baroData)) {
+                logStream << "Baro: Pres(" << baroData.pressure_pa << ") Temp(" << baroData.temperature_c << ") Alt(" << baroData.altitude_m << ") ";
+            }
         }
 
         // Read and log Fused Sensor data
-        std::optional<FusedSensorData> fusedData = messagingClient.readFusedSensorData();
-        if (fusedData) {
-            // TODO: Uncomment when FusedSensorData is implemented
-            //logStream << "Fused: Roll(" << fusedData->attitude_roll << ") Pitch(" << fusedData->attitude_pitch << ") Yaw(" << fusedData->attitude_yaw << ") Alt(" << fusedData->altitude_fused << ") VSpeed(" << fusedData->vertical_speed << ") ";
+        FusedSensorData fusedData;
+        if (messagingClient.checkFusedSensorData(fusedSensorDataSubToken.value())) {
+            if (messagingClient.readFusedSensorData(fusedSensorDataSubToken.value(), fusedData)) {
+                // TODO: Uncomment when FusedSensorData is implemented
+                //logStream << "Fused: Roll(" << fusedData.attitude_roll << ") Pitch(" << fusedData.attitude_pitch << ") Yaw(" << fusedData.attitude_yaw << ") Alt(" << fusedData.altitude_fused << ") VSpeed(" << fusedData.vertical_speed << ") ";
+            }
         }
 
         // Read and log Flight State
-        std::optional<FlightState> flightState = messagingClient.readFlightState();
-        if (flightState) {
-            logStream << "State: " << static_cast<int>(flightState->current_phase) << " ";
+        FlightState flightState;
+        if (messagingClient.checkFlightState(flightStateSubToken.value())) {
+            if (messagingClient.readFlightState(flightStateSubToken.value(), flightState)) {
+                logStream << "State: " << static_cast<int>(flightState.current_phase) << " ";
+            }
         }
 
         // Read and log Events
-        std::optional<Event> event = messagingClient.readEvent();
-        if (event) {
-            logger.logEvent("Event: " + event->type);
+        Event event;
+        if (messagingClient.checkEvent(eventSubToken.value())) {
+            if (messagingClient.readEvent(eventSubToken.value(), event)) {
+                logger.logEvent("Event: " + event.type);
+            }
         }
 
         std::string logEntry = logStream.str();

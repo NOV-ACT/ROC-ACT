@@ -18,9 +18,6 @@
 namespace novact {
 namespace core {
 
-
-
-
 class MessagingClient {
 public:
     MessagingClient();
@@ -32,31 +29,47 @@ public:
     bool publishPyroCommand(const PyroCommand& msg);
     bool publishEvent(const Event& msg);
 
-    // Subscribe methods (simplified for now, will expand if needed)
-    // For demonstration, we'll use a polling approach.
-    std::optional<SensorImu> readImu();
-    std::optional<SensorBaro> readBaro();
-    std::optional<FusedSensorData> readFusedSensorData(); // New read method
-    std::optional<FlightState> readFlightState();
-    std::optional<PyroCommand> readPyroCommand();
-    std::optional<Event> readEvent();
+    // New subscribe methods: External callers get their own token
+    std::optional<size_t> subscribeImu();
+    std::optional<size_t> subscribeBaro();
+    std::optional<size_t> subscribeFusedSensorData();
+    std::optional<size_t> subscribeFlightState();
+    std::optional<size_t> subscribePyroCommand();
+    std::optional<size_t> subscribeEvent();
+
+    // New check methods: External callers use their token to check for new data
+    bool checkImu(size_t token);
+    bool checkBaro(size_t token);
+    bool checkFusedSensorData(size_t token);
+    bool checkFlightState(size_t token);
+    bool checkPyroCommand(size_t token);
+    bool checkEvent(size_t token);
+
+    // New read methods: External callers use their token to read data into an output parameter
+    // Returns true on successful read (new data available), false otherwise.
+    bool readImu(size_t token, SensorImu& out_msg);
+    bool readBaro(size_t token, SensorBaro& out_msg);
+    bool readFusedSensorData(size_t token, FusedSensorData& out_msg);
+    bool readFlightState(size_t token, FlightState& out_msg);
+    bool readPyroCommand(size_t token, PyroCommand& out_msg);
+    bool readEvent(size_t token, Event& out_msg);
+
+    // New unsubscribe methods: External callers release their token
+    void unsubscribeImu(size_t token);
+    void unsubscribeBaro(size_t token);
+    void unsubscribeFusedSensorData(size_t token);
+    void unsubscribeFlightState(size_t token);
+    void unsubscribePyroCommand(size_t token);
+    void unsubscribeEvent(size_t token);
 
 private:
     // References to MREQ topics, obtained from TopicRegistry
     Topic<SensorImu>& imuTopic;
     Topic<SensorBaro>& baroTopic;
-    Topic<FusedSensorData>& fusedSensorDataTopic; // New topic reference
+    Topic<FusedSensorData>& fusedSensorDataTopic;
     Topic<FlightState>& flightStateTopic;
     Topic<PyroCommand>& pyroCommandTopic;
     Topic<Event>& eventTopic;
-
-    // Subscriber tokens for polling
-    std::optional<size_t> imuSubToken;
-    std::optional<size_t> baroSubToken;
-    std::optional<size_t> fusedSensorDataSubToken; // New subscriber token
-    std::optional<size_t> flightStateSubToken;
-    std::optional<size_t> pyroCommandSubToken;
-    std::optional<size_t> eventSubToken;
 };
 
 } // namespace core

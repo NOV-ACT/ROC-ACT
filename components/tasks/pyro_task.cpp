@@ -18,16 +18,25 @@ extern "C" void pyro_task(void* pvParameters) {
 
     printf("Pyro Task: Initializing...\n");
 
+    // Subscribe to pyro_command topic
+    std::optional<size_t> pyroCommandSubToken = messagingClient.subscribePyroCommand();
+    if (!pyroCommandSubToken) {
+        printf("Pyro Task: Failed to subscribe to pyro_command topic!\n");
+        vTaskDelete(NULL);
+    }
+
     for (;;) {
-        std::optional<PyroCommand> pyroCommand = messagingClient.readPyroCommand();
-        if (pyroCommand) {
-            if (pyroCommand.value().activate) {
-                pyroDriver.activateChannel(pyroCommand.value().channel_id);
-            } else {
-                pyroDriver.deactivateChannel(pyroCommand.value().channel_id);
+        PyroCommand pyroCommand;
+        if (messagingClient.checkPyroCommand(pyroCommandSubToken.value())) {
+            if (messagingClient.readPyroCommand(pyroCommandSubToken.value(), pyroCommand)) {
+                if (pyroCommand.activate) {
+                    pyroDriver.activateChannel(pyroCommand.channel_id);
+                } else {
+                    pyroDriver.deactivateChannel(pyroCommand.channel_id);
+                }
+                printf("Pyro Task: Processed pyro command for channel %d, activate: %d.\n",
+                       static_cast<int>(pyroCommand.channel_id), pyroCommand.activate);
             }
-            printf("Pyro Task: Processed pyro command for channel %d, activate: %d.\n",
-                   static_cast<int>(pyroCommand.value().channel_id), pyroCommand.value().activate);
         } else {
             printf("Pyro Task: No new pyro commands.\n");
         }
