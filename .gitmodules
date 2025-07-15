@@ -1,3 +1,6 @@
 [submodule "mreq"]
 	path = mreq
-	url = git@github.com:tech-alp/mreq.git
+	url = https://github.com/tech-alp/mreq.git
+[submodule "lib/NOV-HAB"]
+	path = lib/NOV-HAB
+	url = https://github.com/NOV-ACT/NOV-HAB.git
