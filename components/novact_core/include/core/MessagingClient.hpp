@@ -4,6 +4,7 @@
 #include <string>
 #include <cstdint>
 #include <optional>           // Required for std::optional
+#include <functional>         // Required for std::reference_wrapper
 #include "mreq/interface.hpp" // For TopicRegistry
 #include "mreq/topic.hpp"     // For Topic<T>
 
@@ -64,12 +65,12 @@ public:
 
 private:
     // References to MREQ topics, obtained from TopicRegistry
-    Topic<SensorImu>& imuTopic;
-    Topic<SensorBaro>& baroTopic;
-    Topic<FusedSensorData>& fusedSensorDataTopic;
-    Topic<FlightState>& flightStateTopic;
-    Topic<PyroCommand>& pyroCommandTopic;
-    Topic<Event>& eventTopic;
+    std::optional<std::reference_wrapper<Topic<SensorImu, 10>>> imuTopic;
+    std::optional<std::reference_wrapper<Topic<SensorBaro, 10>>> baroTopic;
+    std::optional<std::reference_wrapper<Topic<FusedSensorData, 10>>> fusedSensorDataTopic;
+    std::optional<std::reference_wrapper<Topic<FlightState, 10>>> flightStateTopic;
+    std::optional<std::reference_wrapper<Topic<PyroCommand, 10>>> pyroCommandTopic;
+    std::optional<std::reference_wrapper<Topic<Event, 10>>> eventTopic;
 };
 
 } // namespace core

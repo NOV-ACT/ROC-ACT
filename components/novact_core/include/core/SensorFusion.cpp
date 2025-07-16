@@ -18,7 +18,7 @@ SensorFusion::SensorFusion(drivers::ImuDriver& imu, drivers::BarometerDriver& ba
 
 FusedSensorData SensorFusion::updateAndPublish() {
     // Read raw data from drivers
-    drivers::ImuData imuData = imuDriver.readData();
+    // drivers::ImuData imuData = imuDriver.readData(); // Commented out as it's currently unused
     drivers::BarometerData baroData = baroDriver.readData();
 
     // Placeholder for actual sensor fusion algorithms (e.g., Kalman filter, complementary filter)

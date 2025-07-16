@@ -15,177 +15,255 @@
 namespace novact {
 namespace core {
 
-MessagingClient::MessagingClient()
-    : imuTopic(TopicRegistry::instance().get_topic<SensorImu>("sensor_imu")),
-      baroTopic(TopicRegistry::instance().get_topic<SensorBaro>("sensor_baro")),
-      fusedSensorDataTopic(TopicRegistry::instance().get_topic<FusedSensorData>("fused_sensor_data")), // New topic
-      flightStateTopic(TopicRegistry::instance().get_topic<FlightState>("flight_state")),
-      pyroCommandTopic(TopicRegistry::instance().get_topic<PyroCommand>("pyro_command")),
-      eventTopic(TopicRegistry::instance().get_topic<Event>("event")) {
+MessagingClient::MessagingClient() {
+    // Register topics first to ensure they exist
+    imuTopic = std::make_optional(std::ref(TopicRegistry::instance().register_topic<SensorImu, 10>("sensor_imu")));
+    baroTopic = std::make_optional(std::ref(TopicRegistry::instance().register_topic<SensorBaro, 10>("sensor_baro")));
+    fusedSensorDataTopic = std::make_optional(std::ref(TopicRegistry::instance().register_topic<FusedSensorData, 10>("fused_sensor_data")));
+    flightStateTopic = std::make_optional(std::ref(TopicRegistry::instance().register_topic<FlightState, 10>("flight_state")));
+    pyroCommandTopic = std::make_optional(std::ref(TopicRegistry::instance().register_topic<PyroCommand, 10>("pyro_command")));
+    eventTopic = std::make_optional(std::ref(TopicRegistry::instance().register_topic<Event, 10>("event")));
 
-    std::cout << "MessagingClient initialized." << std::endl;
     // No internal subscriptions needed anymore, external callers will manage their tokens.
 }
 
 // Publish methods
 bool MessagingClient::publishImu(const SensorImu& msg) {
-    imuTopic.publish(msg);
-    return true;
+    if (imuTopic) {
+        imuTopic->get().publish(msg);
+        return true;
+    }
+    return false;
 }
 
 bool MessagingClient::publishBaro(const SensorBaro& msg) {
-    baroTopic.publish(msg);
-    return true;
+    if (baroTopic) {
+        baroTopic->get().publish(msg);
+        return true;
+    }
+    return false;
 }
 
 bool MessagingClient::publishFusedSensorData(const FusedSensorData& msg) {
-    fusedSensorDataTopic.publish(msg);
-    return true;
+    if (fusedSensorDataTopic) {
+        fusedSensorDataTopic->get().publish(msg);
+        return true;
+    }
+    return false;
 }
 
 bool MessagingClient::publishFlightState(const FlightState& msg) {
-    flightStateTopic.publish(msg);
-    return true;
+    if (flightStateTopic) {
+        flightStateTopic->get().publish(msg);
+        return true;
+    }
+    return false;
 }
 
 bool MessagingClient::publishPyroCommand(const PyroCommand& msg) {
-    pyroCommandTopic.publish(msg);
-    return true;
+    if (pyroCommandTopic) {
+        pyroCommandTopic->get().publish(msg);
+        return true;
+    }
+    return false;
 }
 
 bool MessagingClient::publishEvent(const Event& msg) {
-    eventTopic.publish(msg);
-    return true;
+    if (eventTopic) {
+        eventTopic->get().publish(msg);
+        return true;
+    }
+    return false;
 }
 
 // Subscribe methods
 std::optional<size_t> MessagingClient::subscribeImu() {
-    return imuTopic.subscribe();
+    if (imuTopic) {
+        return imuTopic->get().subscribe();
+    }
+    return std::nullopt;
 }
 
 std::optional<size_t> MessagingClient::subscribeBaro() {
-    return baroTopic.subscribe();
+    if (baroTopic) {
+        return baroTopic->get().subscribe();
+    }
+    return std::nullopt;
 }
 
 std::optional<size_t> MessagingClient::subscribeFusedSensorData() {
-    return fusedSensorDataTopic.subscribe();
+    if (fusedSensorDataTopic) {
+        return fusedSensorDataTopic->get().subscribe();
+    }
+    return std::nullopt;
 }
 
 std::optional<size_t> MessagingClient::subscribeFlightState() {
-    return flightStateTopic.subscribe();
+    if (flightStateTopic) {
+        return flightStateTopic->get().subscribe();
+    }
+    return std::nullopt;
 }
 
 std::optional<size_t> MessagingClient::subscribePyroCommand() {
-    return pyroCommandTopic.subscribe();
+    if (pyroCommandTopic) {
+        return pyroCommandTopic->get().subscribe();
+    }
+    return std::nullopt;
 }
 
 std::optional<size_t> MessagingClient::subscribeEvent() {
-    return eventTopic.subscribe();
+    if (eventTopic) {
+        return eventTopic->get().subscribe();
+    }
+    return std::nullopt;
 }
 
 // Check methods
 bool MessagingClient::checkImu(size_t token) {
-    return imuTopic.check(token);
+    if (imuTopic) {
+        return imuTopic->get().check(token);
+    }
+    return false;
 }
 
 bool MessagingClient::checkBaro(size_t token) {
-    return baroTopic.check(token);
+    if (baroTopic) {
+        return baroTopic->get().check(token);
+    }
+    return false;
 }
 
 bool MessagingClient::checkFusedSensorData(size_t token) {
-    return fusedSensorDataTopic.check(token);
+    if (fusedSensorDataTopic) {
+        return fusedSensorDataTopic->get().check(token);
+    }
+    return false;
 }
 
 bool MessagingClient::checkFlightState(size_t token) {
-    return flightStateTopic.check(token);
+    if (flightStateTopic) {
+        return flightStateTopic->get().check(token);
+    }
+    return false;
 }
 
 bool MessagingClient::checkPyroCommand(size_t token) {
-    return pyroCommandTopic.check(token);
+    if (pyroCommandTopic) {
+        return pyroCommandTopic->get().check(token);
+    }
+    return false;
 }
 
 bool MessagingClient::checkEvent(size_t token) {
-    return eventTopic.check(token);
+    if (eventTopic) {
+        return eventTopic->get().check(token);
+    }
+    return false;
 }
 
 // Read methods
 bool MessagingClient::readImu(size_t token, SensorImu& out_msg) {
-    std::optional<SensorImu> data = imuTopic.read(token);
-    if (data) {
-        out_msg = data.value();
-        return true;
+    if (imuTopic) {
+        std::optional<SensorImu> data = imuTopic->get().read(token);
+        if (data) {
+            out_msg = data.value();
+            return true;
+        }
     }
     return false;
 }
 
 bool MessagingClient::readBaro(size_t token, SensorBaro& out_msg) {
-    std::optional<SensorBaro> data = baroTopic.read(token);
-    if (data) {
-        out_msg = data.value();
-        return true;
+    if (baroTopic) {
+        std::optional<SensorBaro> data = baroTopic->get().read(token);
+        if (data) {
+            out_msg = data.value();
+            return true;
+        }
     }
     return false;
 }
 
 bool MessagingClient::readFusedSensorData(size_t token, FusedSensorData& out_msg) {
-    std::optional<FusedSensorData> data = fusedSensorDataTopic.read(token);
-    if (data) {
-        out_msg = data.value();
-        return true;
+    if (fusedSensorDataTopic) {
+        std::optional<FusedSensorData> data = fusedSensorDataTopic->get().read(token);
+        if (data) {
+            out_msg = data.value();
+            return true;
+        }
     }
     return false;
 }
 
 bool MessagingClient::readFlightState(size_t token, FlightState& out_msg) {
-    std::optional<FlightState> data = flightStateTopic.read(token);
-    if (data) {
-        out_msg = data.value();
-        return true;
+    if (flightStateTopic) {
+        std::optional<FlightState> data = flightStateTopic->get().read(token);
+        if (data) {
+            out_msg = data.value();
+            return true;
+        }
     }
     return false;
 }
 
 bool MessagingClient::readPyroCommand(size_t token, PyroCommand& out_msg) {
-    std::optional<PyroCommand> data = pyroCommandTopic.read(token);
-    if (data) {
-        out_msg = data.value();
-        return true;
+    if (pyroCommandTopic) {
+        std::optional<PyroCommand> data = pyroCommandTopic->get().read(token);
+        if (data) {
+            out_msg = data.value();
+            return true;
+        }
     }
     return false;
 }
 
 bool MessagingClient::readEvent(size_t token, Event& out_msg) {
-    std::optional<Event> data = eventTopic.read(token);
-    if (data) {
-        out_msg = data.value();
-        return true;
+    if (eventTopic) {
+        std::optional<Event> data = eventTopic->get().read(token);
+        if (data) {
+            out_msg = data.value();
+            return true;
+        }
     }
     return false;
 }
 
 // Unsubscribe methods
 void MessagingClient::unsubscribeImu(size_t token) {
-    imuTopic.unsubscribe(token);
+    if (imuTopic) {
+        imuTopic->get().unsubscribe(token);
+    }
 }
 
 void MessagingClient::unsubscribeBaro(size_t token) {
-    baroTopic.unsubscribe(token);
+    if (baroTopic) {
+        baroTopic->get().unsubscribe(token);
+    }
 }
 
 void MessagingClient::unsubscribeFusedSensorData(size_t token) {
-    fusedSensorDataTopic.unsubscribe(token);
+    if (fusedSensorDataTopic) {
+        fusedSensorDataTopic->get().unsubscribe(token);
+    }
 }
 
 void MessagingClient::unsubscribeFlightState(size_t token) {
-    flightStateTopic.unsubscribe(token);
+    if (flightStateTopic) {
+        flightStateTopic->get().unsubscribe(token);
+    }
 }
 
 void MessagingClient::unsubscribePyroCommand(size_t token) {
-    pyroCommandTopic.unsubscribe(token);
+    if (pyroCommandTopic) {
+        pyroCommandTopic->get().unsubscribe(token);
+    }
 }
 
 void MessagingClient::unsubscribeEvent(size_t token) {
-    eventTopic.unsubscribe(token);
+    if (eventTopic) {
+        eventTopic->get().unsubscribe(token);
+    }
 }
 
 } // namespace core
