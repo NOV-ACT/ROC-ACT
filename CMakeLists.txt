@@ -6,8 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_compile_definitions(MREQ_PLATFORM_FREERTOS)
 
 # 1. Bağımsız CMake projesi olan mreq alt modülü eklenir
-add_subdirectory(mreq)
-add_subdirectory(lib/NOV-HAB)
+add_subdirectory(components/msg_proto/mreq)
 # 2. ESP-IDF build sistemi başlatılır
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(novact_fc)

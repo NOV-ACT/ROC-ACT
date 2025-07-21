@@ -1,6 +1,5 @@
 #include "TelemetryDriver.hpp"
 #include <iostream>
-#include <algorithm> // For std::copy
 
 namespace novact {
 namespace drivers {
