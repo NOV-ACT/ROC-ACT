@@ -4,12 +4,12 @@ include(${COMPONENT_DIR}/mreq/cmake/GenerateTopicRegistry.cmake)
 
 # Proto dosyalarını tanımla
 set(PROTO_FILES
-    ${COMPONENT_DIR}/event.proto
-    ${COMPONENT_DIR}/fused_sensor_data.proto
-    ${COMPONENT_DIR}/flight_state.proto
-    ${COMPONENT_DIR}/pyro_command.proto
-    ${COMPONENT_DIR}/sensor_baro.proto
-    ${COMPONENT_DIR}/sensor_imu.proto
+    ${COMPONENT_DIR}/proto/event.proto
+    ${COMPONENT_DIR}/proto/fused_sensor_data.proto
+    ${COMPONENT_DIR}/proto/flight_state.proto
+    ${COMPONENT_DIR}/proto/pyro_command.proto
+    ${COMPONENT_DIR}/proto/sensor_baro.proto
+    ${COMPONENT_DIR}/proto/sensor_imu.proto
 )
 
 # mreq'in cmake dosyalarını include et
