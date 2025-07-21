@@ -1,7 +1,7 @@
 
-[submodule "components/tasks/NOV-HAB"]
-	path = components/tasks/NOV-HAB
-	url = https://github.com/NOV-ACT/NOV-HAB.git
 [submodule "components/msg_proto/mreq"]
 	path = components/msg_proto/mreq
 	url = https://github.com/tech-alp/mreq.git
+[submodule "components/novact_comm/NOV-HAB"]
+	path = components/novact_comm/NOV-HAB
+	url = https://github.com/NOV-ACT/NOV-HAB.git
