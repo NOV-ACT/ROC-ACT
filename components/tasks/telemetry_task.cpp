@@ -10,7 +10,6 @@
 #include "sensor_imu.pb.h"
 #include "sensor_baro.pb.h"
 #include "event.pb.h"
-#include "flight_state.pb.h"
 
 // Cihaz ID ve numaraları için enumlar
 enum class DeviceId : uint16_t {
@@ -21,6 +20,30 @@ enum class DeviceId : uint16_t {
 enum class DeviceNo : uint16_t {
     MAIN = 0x0001,
 };
+
+// Helper function to encode and transmit telemetry data
+void transmit_telemetry_data(
+    novact::drivers::TelemetryDriver& driver,
+    UnitCommProtocol& protocol,
+    const void* data,
+    const pb_msgdesc_t* fields,
+    uint8_t message_id,
+    const char* log_message
+) {
+    printf("Telemetry Task: %s\n", log_message);
+    uint8_t buffer[128]; // Increased buffer size for safety
+    pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
+    if (pb_encode(&stream, fields, data)) {
+        std::vector<uint8_t> payload(buffer, buffer + stream.bytes_written);
+        protocol.setHeader(UnitCommProtocol::PacketType::TELEMETRY, message_id,
+            static_cast<uint16_t>(DeviceId::GCS), static_cast<uint16_t>(DeviceNo::MAIN),
+            static_cast<uint16_t>(DeviceId::FLIGHT_CTRL), static_cast<uint16_t>(DeviceNo::MAIN));
+        protocol.setPayload(payload);
+        protocol.finalizeFrame();
+        std::vector<uint8_t> frame = protocol.serializeFrame();
+        driver.sendData(frame.data(), frame.size());
+    }
+}
 
 extern "C" void telemetry_task(void* pvParameters) {
     (void)pvParameters; // Unused parameter
@@ -55,96 +78,35 @@ extern "C" void telemetry_task(void* pvParameters) {
         // Read and transmit Flight State
         FlightState flightState;
         if (messagingClient.readFlightState(flightStateSubToken.value(), flightState)) {
-            printf("Telemetry Task: Transmitting Flight State: %d\n", static_cast<int>(flightState.current_phase));
-            uint8_t buffer[64];
-            pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
-            if (pb_encode(&stream, FlightState_fields, &flightState)) {
-                std::vector<uint8_t> payload(buffer, buffer + stream.bytes_written);
-                UnitCommProtocol protocol;
-                protocol.setHeader(UnitCommProtocol::PacketType::TELEMETRY, 0x01,
-                    static_cast<uint16_t>(DeviceId::GCS), static_cast<uint16_t>(DeviceNo::MAIN),
-                    static_cast<uint16_t>(DeviceId::FLIGHT_CTRL), static_cast<uint16_t>(DeviceNo::MAIN));
-                protocol.setPayload(payload);
-                protocol.finalizeFrame();
-                std::vector<uint8_t> frame = protocol.serializeFrame();
-                telemetryDriver.sendData(frame.data(), frame.size());
-            }
+            char log_msg[64];
+            snprintf(log_msg, sizeof(log_msg), "Transmitting Flight State: %d", static_cast<int>(flightState.current_phase));
+            transmit_telemetry_data(telemetryDriver, telemetryProtocol, &flightState, FlightState_fields, 0x01, log_msg);
         }
 
         // Read and transmit Events
         Event event;
         if (messagingClient.readEvent(eventSubToken.value(), event)) {
-            printf("Telemetry Task: Transmitting Event: %d\n", static_cast<int>(event.type));
-            uint8_t buffer[64];
-            pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
-            if (pb_encode(&stream, Event_fields, &event)) {
-                std::vector<uint8_t> payload(buffer, buffer + stream.bytes_written);
-                UnitCommProtocol protocol;
-                protocol.setHeader(UnitCommProtocol::PacketType::TELEMETRY, 0x02,
-                    static_cast<uint16_t>(DeviceId::GCS), static_cast<uint16_t>(DeviceNo::MAIN),
-                    static_cast<uint16_t>(DeviceId::FLIGHT_CTRL), static_cast<uint16_t>(DeviceNo::MAIN));
-                protocol.setPayload(payload);
-                protocol.finalizeFrame();
-                std::vector<uint8_t> frame = protocol.serializeFrame();
-                telemetryDriver.sendData(frame.data(), frame.size());
-            }
+            char log_msg[64];
+            snprintf(log_msg, sizeof(log_msg), "Transmitting Event: %d", static_cast<int>(event.type));
+            transmit_telemetry_data(telemetryDriver, telemetryProtocol, &event, Event_fields, 0x02, log_msg);
         }
 
         // Read and transmit IMU data
         SensorImu imuData;
         if (messagingClient.readImu(imuSubToken.value(), imuData)) {
-            printf("Telemetry Task: Transmitting IMU data.\n");
-            uint8_t buffer[64];
-            pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
-            if (pb_encode(&stream, SensorImu_fields, &imuData)) {
-                std::vector<uint8_t> payload(buffer, buffer + stream.bytes_written);
-                UnitCommProtocol protocol;
-                protocol.setHeader(UnitCommProtocol::PacketType::TELEMETRY, 0x03,
-                    static_cast<uint16_t>(DeviceId::GCS), static_cast<uint16_t>(DeviceNo::MAIN),
-                    static_cast<uint16_t>(DeviceId::FLIGHT_CTRL), static_cast<uint16_t>(DeviceNo::MAIN));
-                protocol.setPayload(payload);
-                protocol.finalizeFrame();
-                std::vector<uint8_t> frame = protocol.serializeFrame();
-                telemetryDriver.sendData(frame.data(), frame.size());
-            }
+            transmit_telemetry_data(telemetryDriver, telemetryProtocol, &imuData, SensorImu_fields, 0x03, "Transmitting IMU data.");
         }
 
         // Read and transmit Baro data
         SensorBaro baroData;
         if (messagingClient.readBaro(baroSubToken.value(), baroData)) {
-            printf("Telemetry Task: Transmitting Baro data.\n");
-            uint8_t buffer[64];
-            pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
-            if (pb_encode(&stream, SensorBaro_fields, &baroData)) {
-                std::vector<uint8_t> payload(buffer, buffer + stream.bytes_written);
-                UnitCommProtocol protocol;
-                protocol.setHeader(UnitCommProtocol::PacketType::TELEMETRY, 0x04,
-                    static_cast<uint16_t>(DeviceId::GCS), static_cast<uint16_t>(DeviceNo::MAIN),
-                    static_cast<uint16_t>(DeviceId::FLIGHT_CTRL), static_cast<uint16_t>(DeviceNo::MAIN));
-                protocol.setPayload(payload);
-                protocol.finalizeFrame();
-                std::vector<uint8_t> frame = protocol.serializeFrame();
-                telemetryDriver.sendData(frame.data(), frame.size());
-            }
+            transmit_telemetry_data(telemetryDriver, telemetryProtocol, &baroData, SensorBaro_fields, 0x04, "Transmitting Baro data.");
         }
 
         // Read and transmit Fused Sensor data using the new protocol
         FusedSensorData fusedData;
         if (messagingClient.readFusedSensorData(fusedSensorDataSubToken.value(), fusedData)) {
-            printf("Telemetry Task: Transmitting Fused Sensor data.\n");
-            uint8_t buffer[64];
-            pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
-            if (pb_encode(&stream, FusedSensorData_fields, &fusedData)) {
-                std::vector<uint8_t> payload(buffer, buffer + stream.bytes_written);
-                UnitCommProtocol protocol;
-                protocol.setHeader(UnitCommProtocol::PacketType::TELEMETRY, 0x05,
-                    static_cast<uint16_t>(DeviceId::GCS), static_cast<uint16_t>(DeviceNo::MAIN),
-                    static_cast<uint16_t>(DeviceId::FLIGHT_CTRL), static_cast<uint16_t>(DeviceNo::MAIN));
-                protocol.setPayload(payload);
-                protocol.finalizeFrame();
-                std::vector<uint8_t> frame = protocol.serializeFrame();
-                telemetryDriver.sendData(frame.data(), frame.size());
-            }
+            transmit_telemetry_data(telemetryDriver, telemetryProtocol, &fusedData, FusedSensorData_fields, 0x05, "Transmitting Fused Sensor data.");
         }
 
         // Placeholder for receiving and parsing incoming data

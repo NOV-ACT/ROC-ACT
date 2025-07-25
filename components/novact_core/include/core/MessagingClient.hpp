@@ -8,7 +8,6 @@
 #include "mreq/interface.hpp" // For TopicRegistry
 #include "mreq/topic.hpp"     // For Topic<T>
 
-#include "StateManager.hpp" // For FlightState enum
 #include "event.pb.h"
 #include "flight_state.pb.h"
 #include "pyro_command.pb.h"

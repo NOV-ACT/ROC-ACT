@@ -4,8 +4,9 @@ enum FlightPhase {
   IDLE = 0;
   BOOST = 1;
   COAST = 2;
-  DEPLOY = 3;
-  RECOVERY = 4;
+  DROGUE_DEPLOY = 3;
+  MAIN_DEPLOY = 4;
+  RECOVERY = 5;
 }
 
 message FlightState {

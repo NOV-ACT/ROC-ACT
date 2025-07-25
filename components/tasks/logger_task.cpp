@@ -12,6 +12,12 @@
 #include "flight_state.pb.h"
 #include "event.pb.h"
 
+// Helper function to write the CSV header for the log file
+void write_log_header(novact::core::Logger& logger) {
+    const char* header = "timestamp_ms,accel_x,accel_y,accel_z,gyro_x,gyro_y,gyro_z,pressure_pa,temperature_c,altitude_m,flight_phase,event_type,event_data";
+    logger.log(header);
+}
+
 extern "C" void logger_task(void* pvParameters) {
     (void)pvParameters; // Unused parameter
 
@@ -24,7 +30,8 @@ extern "C" void logger_task(void* pvParameters) {
         vTaskDelete(NULL); // Delete task if initialization fails
     }
 
-    printf("Logger Task: Initializing...\n");
+    printf("Logger Task: Initializing and writing header...\n");
+    write_log_header(logger);
 
     // Subscribe to all topics that LoggerTask needs to read
     std::optional<size_t> imuSubToken = messagingClient.subscribeImu();
@@ -39,57 +46,48 @@ extern "C" void logger_task(void* pvParameters) {
     }
 
     for (;;) {
-        std::stringstream logStream;
+        std::stringstream csv_line;
+
+        // Timestamp
+        csv_line << xTaskGetTickCount() * portTICK_PERIOD_MS << ",";
 
         // Read and log IMU data
         SensorImu imuData;
-        if (messagingClient.checkImu(imuSubToken.value())) {
-            if (messagingClient.readImu(imuSubToken.value(), imuData)) {
-                logStream << "IMU: Accel(" << imuData.accel_x << "," << imuData.accel_y << "," << imuData.accel_z << ") ";
-            }
+        if (messagingClient.readImu(imuSubToken.value(), imuData)) {
+            csv_line << imuData.accel_x << "," << imuData.accel_y << "," << imuData.accel_z << ","
+                     << imuData.gyro_x << "," << imuData.gyro_y << "," << imuData.gyro_z;
         }
+        csv_line << ",";
 
         // Read and log Baro data
         SensorBaro baroData;
-        if (messagingClient.checkBaro(baroSubToken.value())) {
-            if (messagingClient.readBaro(baroSubToken.value(), baroData)) {
-                logStream << "Baro: Pres(" << baroData.pressure_pa << ") Temp(" << baroData.temperature_c << ") Alt(" << baroData.altitude_m << ") ";
-            }
+        if (messagingClient.readBaro(baroSubToken.value(), baroData)) {
+            csv_line << baroData.pressure_pa << "," << baroData.temperature_c << "," << baroData.altitude_m;
         }
-
-        // Read and log Fused Sensor data
-        FusedSensorData fusedData;
-        if (messagingClient.checkFusedSensorData(fusedSensorDataSubToken.value())) {
-            if (messagingClient.readFusedSensorData(fusedSensorDataSubToken.value(), fusedData)) {
-                // TODO: Uncomment when FusedSensorData is implemented
-                //logStream << "Fused: Roll(" << fusedData.attitude_roll << ") Pitch(" << fusedData.attitude_pitch << ") Yaw(" << fusedData.attitude_yaw << ") Alt(" << fusedData.altitude_fused << ") VSpeed(" << fusedData.vertical_speed << ") ";
-            }
-        }
+        csv_line << ",";
 
         // Read and log Flight State
         FlightState flightState;
-        if (messagingClient.checkFlightState(flightStateSubToken.value())) {
-            if (messagingClient.readFlightState(flightStateSubToken.value(), flightState)) {
-                logStream << "State: " << static_cast<int>(flightState.current_phase) << " ";
-            }
+        if (messagingClient.readFlightState(flightStateSubToken.value(), flightState)) {
+            // csv_line << static_cast<int>(flightState.current_phase);
         }
+        csv_line << ",";
 
         // Read and log Events
         Event event;
-        if (messagingClient.checkEvent(eventSubToken.value())) {
-            if (messagingClient.readEvent(eventSubToken.value(), event)) {
-                logger.logEvent("Event: " + event.type);
-            }
+        if (messagingClient.readEvent(eventSubToken.value(), event)) {
+            // csv_line << static_cast<int>(event.type) << "," << event.message;
+        }
+        // No final comma needed for the last field
+
+        std::string logEntry = csv_line.str();
+        
+        // Log only if the line is not empty or just a timestamp with commas
+        if (logEntry.length() > 25) { // Heuristic check to avoid nearly empty lines
+             logger.log(logEntry);
+             // printf("Logger Task: Logged: %s\n", logEntry.c_str()); // Optional: for debugging
         }
 
-        std::string logEntry = logStream.str();
-        if (!logEntry.empty()) {
-            logger.log(logEntry);
-            printf("Logger Task: Logged data.\n");
-        } else {
-            printf("Logger Task: No new data to log.\n");
-        }
-
-        vTaskDelay(pdMS_TO_TICKS(500)); // Run every 500ms
+        vTaskDelay(pdMS_TO_TICKS(100)); // Log more frequently for higher resolution data
     }
 }
