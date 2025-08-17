@@ -2,14 +2,16 @@
 #include "freertos/task.h"
 #include <stdio.h>
 #include "drivers/BarometerDriver.hpp"
-#include "core/MessagingClient.hpp"
+#include "mreq/mreq.hpp"
+#include "topic_registry_autogen.hpp"
 #include "sensor_baro.pb.h" // For SensorBaro message
+
+using namespace mreq::autogen;
 
 extern "C" void baro_task(void* pvParameters) {
     (void)pvParameters; // Unused parameter
 
     novact::drivers::BarometerDriver barometerDriver;
-    novact::core::MessagingClient messagingClient;
 
     if (!barometerDriver.initialize()) {
         printf("Baro Task: Failed to initialize Barometer Driver!\n");
@@ -27,7 +29,7 @@ extern "C" void baro_task(void* pvParameters) {
         baroMessage.temperature_c = baroRawData.temperature;
         baroMessage.altitude_m = baroRawData.altitude;
 
-        messagingClient.publishBaro(baroMessage);
+        MREQ_PUBLISH(sensor_baro, baroMessage);
 
         printf("Baro Task: Reading and publishing baro data.\n");
         vTaskDelay(pdMS_TO_TICKS(200)); // Run every 200ms

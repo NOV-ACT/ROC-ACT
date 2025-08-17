@@ -3,23 +3,20 @@
 
 #include "drivers/ImuDriver.hpp"
 #include "drivers/BarometerDriver.hpp"
-#include "core/MessagingClient.hpp" // For publishing fused data
 #include <chrono> // Required for std::chrono::time_point
+#include "fused_sensor_data.pb.h"
 
 namespace novact {
 namespace core {
 
-#include "fused_sensor_data.pb.h"
-
 class SensorFusion {
 public:
-    SensorFusion(drivers::ImuDriver& imu, drivers::BarometerDriver& baro, MessagingClient& msgClient);
+    SensorFusion(drivers::ImuDriver& imu, drivers::BarometerDriver& baro);
     FusedSensorData updateAndPublish(); // Renamed to reflect publishing
 
 private:
     drivers::ImuDriver& imuDriver;
     drivers::BarometerDriver& baroDriver;
-    MessagingClient& messagingClient; // Reference to messaging client
 
     // Placeholder for internal state for fusion algorithms (e.g., Kalman filter variables)
     float lastAltitude;

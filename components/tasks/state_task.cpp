@@ -3,7 +3,8 @@
 #include <stdio.h>
 #include "core/StateManager.hpp"
 #include "core/SensorFusion.hpp"
-#include "core/MessagingClient.hpp"
+#include "mreq/mreq.hpp"
+#include "topic_registry_autogen.hpp"
 #include "drivers/ImuDriver.hpp"     // Required for SensorFusion instantiation
 #include "drivers/BarometerDriver.hpp" // Required for SensorFusion instantiation
 #include "fused_sensor_data.pb.h"
@@ -11,12 +12,13 @@
 #include "pyro_command.pb.h"
 #include "event.pb.h"
 
+using namespace mreq::autogen;
+
 extern "C" void state_task(void* pvParameters) {
     (void)pvParameters; // Unused parameter
 
     novact::core::StateManager stateManager;
-    novact::core::MessagingClient messagingClient;
-    // novact::core::SensorFusion sensorFusion(messagingClient); // TODO: Refactor SensorFusion to not need drivers
+    // novact::core::SensorFusion sensorFusion; // TODO: Refactor SensorFusion to not need drivers
 
     printf("State Task: Initializing...\n");
 
@@ -31,20 +33,20 @@ extern "C" void state_task(void* pvParameters) {
 
         // Execute FSM logic and get the new state
         FlightPhase old_phase = stateManager.getCurrentState();
-        FlightPhase new_phase = stateManager.updateState(messagingClient); // Pass client to updateState
+        FlightPhase new_phase = stateManager.updateState(); // Pass client to updateState
 
         // Publish the new state if it has changed
         if (new_phase != old_phase) {
             FlightState newFlightState = FlightState_init_zero;
             newFlightState.timestamp_us = xTaskGetTickCount() * portTICK_PERIOD_MS;
             newFlightState.current_phase = new_phase;
-            messagingClient.publishFlightState(newFlightState);
+            MREQ_PUBLISH(flight_state, newFlightState);
 
             // Publish an event for the state change
         }
 
         // Check if pyro channels should be fired
-        stateManager.checkAndFirePyros(messagingClient);
+        stateManager.checkAndFirePyros();
 
         vTaskDelay(pdMS_TO_TICKS(20)); // FSM should run at a high frequency
     }

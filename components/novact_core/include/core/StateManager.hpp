@@ -2,7 +2,6 @@
 #define STATE_MANAGER_HPP
 
 #include "flight_state.pb.h"
-#include "core/MessagingClient.hpp"
 #include <cstdint>
 
 namespace novact {
@@ -13,17 +12,15 @@ public:
     StateManager();
 
     /**
-     * @brief Updates the flight state based on sensor data from the messaging client.
-     * @param client The messaging client to read sensor data from.
+     * @brief Updates the flight state based on sensor data from topics.
      * @return The new flight state.
      */
-    FlightPhase updateState(MessagingClient& client);
+    FlightPhase updateState();
 
     /**
      * @brief Checks if any pyrotechnic channels should be fired based on the current state and conditions.
-     * @param client The messaging client to publish pyro commands to.
      */
-    void checkAndFirePyros(MessagingClient& client);
+    void checkAndFirePyros();
 
     /**
      * @brief Gets the current flight state.

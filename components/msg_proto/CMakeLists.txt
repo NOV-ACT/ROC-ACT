@@ -1,7 +1,3 @@
-# Modified GenerateProtobuf.cmake'i include et
-include(${COMPONENT_DIR}/mreq/cmake/GenerateProtobuf.cmake)
-include(${COMPONENT_DIR}/mreq/cmake/GenerateTopicRegistry.cmake)
-
 # Proto dosyalarını tanımla
 set(PROTO_FILES
     ${COMPONENT_DIR}/proto/event.proto
@@ -12,18 +8,30 @@ set(PROTO_FILES
     ${COMPONENT_DIR}/proto/sensor_imu.proto
 )
 
+# nanopb source dosyalarını belirt
+set(NANOPB_SOURCES
+    ${COMPONENT_DIR}/mreq/external/nanopb/pb_common.c
+    ${COMPONENT_DIR}/mreq/external/nanopb/pb_decode.c
+    ${COMPONENT_DIR}/mreq/external/nanopb/pb_encode.c
+)
+
+# TODO: Bu kısmı düzelt
+set(PROTO_FILES_NOT_GENERATED ${PROTO_FILES} ${COMPONENT_DIR}/proto/vector3.proto ${COMPONENT_DIR}/proto/quaternion.proto)
+
 # mreq'in cmake dosyalarını include et
 include(${COMPONENT_DIR}/mreq/cmake/GenerateProtobuf.cmake)
 include(${COMPONENT_DIR}/mreq/cmake/GenerateTopicRegistry.cmake)
+include(${COMPONENT_DIR}/mreq/cmake/PlatformConfig.cmake)
 
 # Otomatik generate edilecek dosyalar için dizin
 set(AUTOGEN_DIR "${CMAKE_BINARY_DIR}/autogen")
 file(MAKE_DIRECTORY ${AUTOGEN_DIR})
 
 # Configure-time'da protobuf dosyalarını generate et
-generate_protobuf_configure_time("${PROTO_FILES}")
+generate_protobuf_configure_time("${PROTO_FILES_NOT_GENERATED}")
 
 # Topic registry generate et
+# generate_topic_registry("${PROTO_FILES}")
 generate_topic_registry_configure_time("${PROTO_FILES}" "${AUTOGEN_DIR}")
 
 # Generate edilen .pb.c dosyalarını bul
@@ -46,21 +54,18 @@ set(COMPONENT_SRCS
 idf_component_register(
     SRCS 
         ${COMPONENT_SRCS}
-        ${COMPONENT_DIR}/mreq/external/nanopb/pb_common.c 
-        ${COMPONENT_DIR}/mreq/external/nanopb/pb_decode.c 
-        ${COMPONENT_DIR}/mreq/external/nanopb/pb_encode.c
-    INCLUDE_DIRS 
+        ${NANOPB_SOURCES}
+    INCLUDE_DIRS
         "${AUTOGEN_DIR}"
         "${COMPONENT_DIR}/mreq/include"
         "${COMPONENT_DIR}/mreq/external/nanopb"
-    REQUIRES
-        # ESP-IDF component dependencies buraya
-        freertos
-        # Diğer gerekli component'ler
 )
 
 # mreq kütüphanesini link et
-target_link_libraries(${COMPONENT_LIB} PUBLIC mreq)
+# target_link_libraries(${COMPONENT_LIB} PUBLIC mreq)
+target_compile_definitions(${COMPONENT_LIB} PUBLIC MREQ_PLATFORM_FREERTOS)
+set_target_properties(${COMPONENT_LIB} PROPERTIES LINKER_LANGUAGE CXX)
+set_source_files_properties(${NANOPB_SOURCES} PROPERTIES LANGUAGE C)
 
 # Debug için generate edilen dosyaları göster
 message(STATUS "Generated protobuf sources: ${GENERATED_PB_SRCS}")

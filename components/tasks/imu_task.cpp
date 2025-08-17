@@ -2,14 +2,16 @@
 #include "freertos/task.h"
 #include <stdio.h>
 #include "drivers/ImuDriver.hpp"
-#include "core/MessagingClient.hpp"
+#include "mreq/mreq.hpp"
+#include "topic_registry_autogen.hpp"
 #include "sensor_imu.pb.h" // For SensorImu message
+
+using namespace mreq::autogen;
 
 extern "C" void imu_task(void* pvParameters) {
     (void)pvParameters; // Unused parameter
 
     novact::drivers::ImuDriver imuDriver;
-    novact::core::MessagingClient messagingClient;
 
     if (!imuDriver.initialize()) {
         printf("IMU Task: Failed to initialize IMU Driver!\n");
@@ -30,7 +32,7 @@ extern "C" void imu_task(void* pvParameters) {
         imuMessage.gyro_y = imuRawData.gyro_y;
         imuMessage.gyro_z = imuRawData.gyro_z;
 
-        messagingClient.publishImu(imuMessage);
+        MREQ_PUBLISH(sensor_imu, imuMessage);
 
         printf("IMU Task: Reading and publishing IMU data.\n");
         vTaskDelay(pdMS_TO_TICKS(100)); // Run every 100ms

@@ -3,7 +3,8 @@
 #include <stdio.h>
 #include "core/Logger.hpp"
 #include "drivers/SDCardDriver.hpp"
-#include "core/MessagingClient.hpp"
+#include "mreq/mreq.hpp"
+#include "topic_registry_autogen.hpp"
 #include <string>
 #include <sstream>
 #include "sensor_imu.pb.h"
@@ -11,6 +12,8 @@
 #include "fused_sensor_data.pb.h"
 #include "flight_state.pb.h"
 #include "event.pb.h"
+
+using namespace mreq::autogen;
 
 // Helper function to write the CSV header for the log file
 void write_log_header(novact::core::Logger& logger) {
@@ -23,7 +26,6 @@ extern "C" void logger_task(void* pvParameters) {
 
     novact::drivers::SDCardDriver sdCardDriver;
     novact::core::Logger logger(sdCardDriver);
-    novact::core::MessagingClient messagingClient;
 
     if (!sdCardDriver.initialize()) {
         printf("Logger Task: Failed to initialize SD Card Driver!\n");
@@ -34,11 +36,11 @@ extern "C" void logger_task(void* pvParameters) {
     write_log_header(logger);
 
     // Subscribe to all topics that LoggerTask needs to read
-    std::optional<size_t> imuSubToken = messagingClient.subscribeImu();
-    std::optional<size_t> baroSubToken = messagingClient.subscribeBaro();
-    std::optional<size_t> fusedSensorDataSubToken = messagingClient.subscribeFusedSensorData();
-    std::optional<size_t> flightStateSubToken = messagingClient.subscribeFlightState();
-    std::optional<size_t> eventSubToken = messagingClient.subscribeEvent();
+    auto imuSubToken = MREQ_SUBSCRIBE(sensor_imu);
+    auto baroSubToken = MREQ_SUBSCRIBE(sensor_baro);
+    auto fusedSensorDataSubToken = MREQ_SUBSCRIBE(fused_sensor_data);
+    auto flightStateSubToken = MREQ_SUBSCRIBE(flight_state);
+    auto eventSubToken = MREQ_SUBSCRIBE(event);
 
     if (!imuSubToken || !baroSubToken || !fusedSensorDataSubToken || !flightStateSubToken || !eventSubToken) {
         printf("Logger Task: Failed to subscribe to all required topics!\n");
@@ -52,31 +54,27 @@ extern "C" void logger_task(void* pvParameters) {
         csv_line << xTaskGetTickCount() * portTICK_PERIOD_MS << ",";
 
         // Read and log IMU data
-        SensorImu imuData;
-        if (messagingClient.readImu(imuSubToken.value(), imuData)) {
-            csv_line << imuData.accel_x << "," << imuData.accel_y << "," << imuData.accel_z << ","
-                     << imuData.gyro_x << "," << imuData.gyro_y << "," << imuData.gyro_z;
+        if (auto imuData = MREQ_READ(sensor_imu, *imuSubToken)) {
+            csv_line << imuData->accel_x << "," << imuData->accel_y << "," << imuData->accel_z << ","
+                     << imuData->gyro_x << "," << imuData->gyro_y << "," << imuData->gyro_z;
         }
         csv_line << ",";
 
         // Read and log Baro data
-        SensorBaro baroData;
-        if (messagingClient.readBaro(baroSubToken.value(), baroData)) {
-            csv_line << baroData.pressure_pa << "," << baroData.temperature_c << "," << baroData.altitude_m;
+        if (auto baroData = MREQ_READ(sensor_baro, *baroSubToken)) {
+            csv_line << baroData->pressure_pa << "," << baroData->temperature_c << "," << baroData->altitude_m;
         }
         csv_line << ",";
 
         // Read and log Flight State
-        FlightState flightState;
-        if (messagingClient.readFlightState(flightStateSubToken.value(), flightState)) {
-            // csv_line << static_cast<int>(flightState.current_phase);
+        if (auto flightState = MREQ_READ(flight_state, *flightStateSubToken)) {
+            // csv_line << static_cast<int>(flightState->current_phase);
         }
         csv_line << ",";
 
         // Read and log Events
-        Event event;
-        if (messagingClient.readEvent(eventSubToken.value(), event)) {
-            // csv_line << static_cast<int>(event.type) << "," << event.message;
+        if (auto event = MREQ_READ(event, *eventSubToken)) {
+            // csv_line << static_cast<int>(event->type) << "," << event->message;
         }
         // No final comma needed for the last field
 

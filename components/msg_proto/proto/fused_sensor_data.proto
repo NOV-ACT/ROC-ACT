@@ -1,17 +1,7 @@
 syntax = "proto3";
 
-message Vector3 {
-  float x = 1;
-  float y = 2;
-  float z = 3;
-}
-
-message Quaternion {
-  float w = 1;
-  float x = 2;
-  float y = 3;
-  float z = 4;
-}
+import "quaternion.proto";
+import "vector3.proto";
 
 message FusedSensorData {
   uint64 timestamp_us = 1; // Timestamp in microseconds
@@ -19,4 +9,6 @@ message FusedSensorData {
   Vector3 position_m = 3;   // Position in meters
   Vector3 velocity_mps = 4; // Velocity in meters per second
   Vector3 acceleration_mps2 = 5; // Acceleration in meters per second squared
+  float altitude_fused = 6; // Fused altitude in meters
+  float vertical_speed = 7; // Vertical speed in m/s
 }

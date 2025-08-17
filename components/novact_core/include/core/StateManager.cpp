@@ -1,10 +1,14 @@
 #include "StateManager.hpp"
+#include "mreq/mreq.hpp"
+#include "topic_registry_autogen.hpp"
 #include "sensor_imu.pb.h"
 #include "sensor_baro.pb.h"
 #include "pyro_command.pb.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include <cmath> // For fabs
+
+using namespace mreq::autogen;
 
 // FSM Constants
 constexpr float LAUNCH_ACCELERATION_THRESHOLD_G = 3.0f;
@@ -26,19 +30,21 @@ StateManager::StateManager() :
     main_pyro_fired(false),
     drogue_pyro_fired(false)
 {
-    // Constructor
+    // Subscribe to topics
+    MREQ_SUBSCRIBE(sensor_imu);
+    MREQ_SUBSCRIBE(sensor_baro);
 }
 
-FlightPhase StateManager::updateState(MessagingClient& client) {
-    SensorImu imuData;
-    SensorBaro baroData;
+FlightPhase StateManager::updateState() {
+    auto imuData = MREQ_READ(sensor_imu, 0); // Assuming token 0 for now
+    auto baroData = MREQ_READ(sensor_baro, 0); // Assuming token 0 for now
 
-    // Always try to read the latest sensor data
-    client.readImu(client.subscribeImu().value(), imuData);
-    client.readBaro(client.subscribeBaro().value(), baroData);
+    if (!imuData || !baroData) {
+        return currentState; // Not enough data to update state
+    }
 
-    float current_altitude = baroData.altitude_m;
-    float total_acceleration = std::sqrt(std::pow(imuData.accel_x, 2) + std::pow(imuData.accel_y, 2) + std::pow(imuData.accel_z, 2)) / 9.81f;
+    float current_altitude = baroData->altitude_m;
+    float total_acceleration = std::sqrt(std::pow(imuData->accel_x, 2) + std::pow(imuData->accel_y, 2) + std::pow(imuData->accel_z, 2)) / 9.81f;
 
     switch (currentState){
         case FlightPhase_IDLE:
@@ -46,7 +52,7 @@ FlightPhase StateManager::updateState(MessagingClient& client) {
                 currentState = FlightPhase_BOOST;
                 launch_time_ms = xTaskGetTickCount() * portTICK_PERIOD_MS;
             }
-            break;  
+            break;
         case FlightPhase_BOOST:
             if (total_acceleration < MOTOR_BURNOUT_ACCELERATION_THRESHOLD_G) {
                 currentState = FlightPhase_COAST;
@@ -59,7 +65,7 @@ FlightPhase StateManager::updateState(MessagingClient& client) {
                 max_altitude = current_altitude;
                 consecutive_descent_readings = 0;
             } else {
-                consecutive_descent_readings++;             
+                consecutive_descent_readings++;
             }
             if (consecutive_descent_readings >= APOGEE_DESCENT_READINGS_THRESHOLD) {
                 currentState = FlightPhase_DROGUE_DEPLOY;
@@ -91,13 +97,13 @@ FlightPhase StateManager::updateState(MessagingClient& client) {
     return currentState;
 }
 
-void StateManager::checkAndFirePyros(MessagingClient& client) {
+void StateManager::checkAndFirePyros() {
     if (currentState == FlightPhase::FlightPhase_DROGUE_DEPLOY && !drogue_pyro_fired) {
         PyroCommand command = PyroCommand_init_zero;
         command.channel_id = 1; // Drogue channel
         command.activate = true; // Fire the drogue pyro
         command.timestamp_us = xTaskGetTickCount() * portTICK_PERIOD_MS * 1000; // Convert to microseconds
-        client.publishPyroCommand(command);
+        MREQ_PUBLISH(pyro_command, command);
         drogue_pyro_fired = true;
     }
 
@@ -106,7 +112,7 @@ void StateManager::checkAndFirePyros(MessagingClient& client) {
         command.channel_id = 1; // Drogue channel
         command.activate = true; // Fire the drogue pyro
         command.timestamp_us = xTaskGetTickCount() * portTICK_PERIOD_MS * 1000; // Convert to microseconds
-        client.publishPyroCommand(command);
+        MREQ_PUBLISH(pyro_command, command);
         main_pyro_fired = true;
     }
 }

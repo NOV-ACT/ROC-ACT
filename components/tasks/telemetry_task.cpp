@@ -1,8 +1,9 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include <stdio.h>
-#include "core/MessagingClient.hpp"
 #include "drivers/TelemetryDriver.hpp"
+#include "mreq/mreq.hpp"
+#include "topic_registry_autogen.hpp"
 #include "UnitCommProtocol.hpp" // Include UnitCommProtocol
 #include "fused_sensor_data.pb.h" // For FusedSensorData
 #include "flight_state.pb.h" // For FlightState
@@ -10,6 +11,8 @@
 #include "sensor_imu.pb.h"
 #include "sensor_baro.pb.h"
 #include "event.pb.h"
+
+using namespace mreq::autogen;
 
 // Cihaz ID ve numaraları için enumlar
 enum class DeviceId : uint16_t {
@@ -60,14 +63,12 @@ extern "C" void telemetry_task(void* pvParameters) {
     UnitCommProtocol telemetryProtocol; // Instance for sending telemetry
     UnitCommProtocol commandProtocol;   // Instance for receiving commands (example)
 
-    novact::core::MessagingClient messagingClient;
-
-    // Subscribe to flight_state and event topics
-    std::optional<size_t> flightStateSubToken = messagingClient.subscribeFlightState();
-    std::optional<size_t> eventSubToken = messagingClient.subscribeEvent();
-    std::optional<size_t> imuSubToken = messagingClient.subscribeImu();
-    std::optional<size_t> baroSubToken = messagingClient.subscribeBaro();
-    std::optional<size_t> fusedSensorDataSubToken = messagingClient.subscribeFusedSensorData();
+    // Subscribe to topics
+    auto flightStateSubToken = MREQ_SUBSCRIBE(flight_state);
+    auto eventSubToken = MREQ_SUBSCRIBE(event);
+    auto imuSubToken = MREQ_SUBSCRIBE(sensor_imu);
+    auto baroSubToken = MREQ_SUBSCRIBE(sensor_baro);
+    auto fusedSensorDataSubToken = MREQ_SUBSCRIBE(fused_sensor_data);
 
     if (!flightStateSubToken || !eventSubToken || !imuSubToken || !baroSubToken || !fusedSensorDataSubToken) {
         printf("Telemetry Task: Failed to subscribe to all required topics!\n");
@@ -76,37 +77,32 @@ extern "C" void telemetry_task(void* pvParameters) {
 
     for (;;) {
         // Read and transmit Flight State
-        FlightState flightState;
-        if (messagingClient.readFlightState(flightStateSubToken.value(), flightState)) {
+        if (auto flightState = MREQ_READ(flight_state, *flightStateSubToken)) {
             char log_msg[64];
-            snprintf(log_msg, sizeof(log_msg), "Transmitting Flight State: %d", static_cast<int>(flightState.current_phase));
-            transmit_telemetry_data(telemetryDriver, telemetryProtocol, &flightState, FlightState_fields, 0x01, log_msg);
+            snprintf(log_msg, sizeof(log_msg), "Transmitting Flight State: %d", static_cast<int>(flightState->current_phase));
+            transmit_telemetry_data(telemetryDriver, telemetryProtocol, &(*flightState), FlightState_fields, 0x01, log_msg);
         }
 
         // Read and transmit Events
-        Event event;
-        if (messagingClient.readEvent(eventSubToken.value(), event)) {
+        if (auto event = MREQ_READ(event, *eventSubToken)) {
             char log_msg[64];
-            snprintf(log_msg, sizeof(log_msg), "Transmitting Event: %d", static_cast<int>(event.type));
-            transmit_telemetry_data(telemetryDriver, telemetryProtocol, &event, Event_fields, 0x02, log_msg);
+            snprintf(log_msg, sizeof(log_msg), "Transmitting Event: %d", static_cast<int>(event->type));
+            transmit_telemetry_data(telemetryDriver, telemetryProtocol, &(*event), Event_fields, 0x02, log_msg);
         }
 
         // Read and transmit IMU data
-        SensorImu imuData;
-        if (messagingClient.readImu(imuSubToken.value(), imuData)) {
-            transmit_telemetry_data(telemetryDriver, telemetryProtocol, &imuData, SensorImu_fields, 0x03, "Transmitting IMU data.");
+        if (auto imuData = MREQ_READ(sensor_imu, *imuSubToken)) {
+            transmit_telemetry_data(telemetryDriver, telemetryProtocol, &(*imuData), SensorImu_fields, 0x03, "Transmitting IMU data.");
         }
 
         // Read and transmit Baro data
-        SensorBaro baroData;
-        if (messagingClient.readBaro(baroSubToken.value(), baroData)) {
-            transmit_telemetry_data(telemetryDriver, telemetryProtocol, &baroData, SensorBaro_fields, 0x04, "Transmitting Baro data.");
+        if (auto baroData = MREQ_READ(sensor_baro, *baroSubToken)) {
+            transmit_telemetry_data(telemetryDriver, telemetryProtocol, &(*baroData), SensorBaro_fields, 0x04, "Transmitting Baro data.");
         }
 
         // Read and transmit Fused Sensor data using the new protocol
-        FusedSensorData fusedData;
-        if (messagingClient.readFusedSensorData(fusedSensorDataSubToken.value(), fusedData)) {
-            transmit_telemetry_data(telemetryDriver, telemetryProtocol, &fusedData, FusedSensorData_fields, 0x05, "Transmitting Fused Sensor data.");
+        if (auto fusedData = MREQ_READ(fused_sensor_data, *fusedSensorDataSubToken)) {
+            transmit_telemetry_data(telemetryDriver, telemetryProtocol, &(*fusedData), FusedSensorData_fields, 0x05, "Transmitting Fused Sensor data.");
         }
 
         // Placeholder for receiving and parsing incoming data
